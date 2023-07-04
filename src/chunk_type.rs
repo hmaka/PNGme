@@ -1,7 +1,7 @@
 use std::{array::TryFromSliceError, fmt, str::FromStr};
 
 #[derive(PartialEq, Eq, Debug)]
-struct ChunkType {
+pub struct ChunkType {
     chunk_type: [u8; 4],
 }
 
