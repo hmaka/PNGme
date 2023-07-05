@@ -2,7 +2,7 @@ use std::{array::TryFromSliceError, fmt, str::FromStr};
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct ChunkType {
-    chunk_type: [u8; 4],
+    pub chunk_type: [u8; 4],
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
