@@ -1,4 +1,4 @@
-use std::{array::TryFromSliceError, fmt, str::FromStr};
+use std::{array::TryFromSliceError, fmt, io::Error, io::ErrorKind, str::FromStr};
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct ChunkType {
@@ -6,7 +6,7 @@ pub struct ChunkType {
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
         let chunk_type_array = ChunkType { chunk_type: value };
@@ -15,7 +15,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl FromStr for ChunkType {
-    type Err = &'static str;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s: Result<[u8; 4], TryFromSliceError> = s.as_bytes()[..4].try_into();
@@ -23,13 +23,15 @@ impl FromStr for ChunkType {
             Ok(value) => {
                 for byte in value {
                     if !byte.is_ascii_alphabetic() {
-                        return Err("Not valid byte chunk");
+                        let error = Error::new(ErrorKind::Other, "Not valid byte chunk");
+                        return Err(error);
                     }
                 }
                 return Ok(ChunkType { chunk_type: value });
             }
             Err(_) => {
-                return Err("string slice failed to convert to bytes");
+                let error = Error::new(ErrorKind::Other, "String slice falied to convert to bytes");
+                return Err(error);
             }
         }
     }

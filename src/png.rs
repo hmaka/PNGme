@@ -1,19 +1,66 @@
 use std::convert::TryFrom;
 use std::fmt;
 use std::fs;
-use std::io::{BufReader, Read};
+use std::io::ErrorKind;
+use std::io::{BufReader, Error, Read};
 use std::path::Path;
 use std::str::FromStr;
 
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
-use crate::{Error, Result};
+use crate::Result;
 
 /// A PNG container as described by the PNG spec
 /// http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html
 #[derive(Debug)]
 pub struct Png {
-    // Write me!
+    png_chunks: Vec<Chunk>,
+}
+
+impl TryFrom<&[u8]> for Png {
+    type Error = Error;
+    fn try_from(value: &[u8]) -> std::result::Result<Self, Self::Error> {
+        let mut reader = BufReader::new(value);
+        let mut header_buffer: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
+
+        reader.read_exact(&mut header_buffer)?;
+        if header_buffer != Png::STANDARD_HEADER {
+            let error = Error::new(ErrorKind::Other, "Invalid PNG header");
+            return Err(error);
+        }
+        let mut input_chunk_length: [u8; 4] = [0, 0, 0, 0];
+        let mut input_as_chunks: Vec<Chunk> = Vec::new();
+        loop {
+            let result = reader.read_exact(&mut input_chunk_length);
+            match result {
+                Ok(()) => {
+                    let length = u32::from_be_bytes(input_chunk_length.clone());
+                    let mut input_chunk_type: [u8; 4] = [0, 0, 0, 0];
+                    reader.read_exact(&mut input_chunk_type)?;
+                    let input_chunk_type: ChunkType =
+                        ChunkType::try_from(input_chunk_type).unwrap();
+
+                    let mut input_chunk_data: Vec<u8> = vec![0; length as usize];
+                    reader.read_exact(&mut input_chunk_data)?;
+
+                    let chunk_to_be_inserted: Chunk =
+                        Chunk::new(input_chunk_type, input_chunk_data);
+                    input_as_chunks.push(chunk_to_be_inserted);
+
+                    // We don't need the crc since it's calculated in new, so we just disregard it.
+                    let mut crc: [u8; 4] = [0, 0, 0, 0];
+                    reader.read_exact(&mut crc)?;
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+
+        let png_struct: Png = Png::from_chunks(input_as_chunks);
+
+        return Ok(png_struct);
+    }
 }
 
 impl Png {
@@ -22,7 +69,7 @@ impl Png {
 
     /// Creates a `Png` from a list of chunks using the correct header
     pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
-        todo!()
+        return Png { png_chunks: chunks };
     }
 
     /// Creates a `Png` from a file path
@@ -32,7 +79,7 @@ impl Png {
 
     /// Appends a chunk to the end of this `Png` file's `Chunk` list.
     pub fn append_chunk(&mut self, chunk: Chunk) {
-        todo!()
+        self.png_chunks.push(chunk);
     }
 
     /// Searches for a `Chunk` with the specified `chunk_type` and removes the first
@@ -60,14 +107,6 @@ impl Png {
     /// Returns this `Png` as a byte sequence.
     /// These bytes will contain the header followed by the bytes of all of the chunks.
     pub fn as_bytes(&self) -> Vec<u8> {
-        todo!()
-    }
-}
-
-impl TryFrom<&[u8]> for Png {
-    type Error = Error;
-
-    fn try_from(bytes: &[u8]) -> Result<Png> {
         todo!()
     }
 }
