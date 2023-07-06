@@ -5,6 +5,7 @@ use std::{
     string::FromUtf8Error,
 };
 
+#[derive(Debug)]
 pub struct Chunk {
     length: u32,
     chunk_type: ChunkType,
@@ -60,7 +61,7 @@ impl Display for Chunk {
 }
 
 impl Chunk {
-    fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let mut bytes = Vec::from(chunk_type.chunk_type.clone());
         bytes.extend(data.clone());
 
