@@ -1,6 +1,6 @@
 use std::{array::TryFromSliceError, fmt, io::Error, io::ErrorKind, str::FromStr};
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct ChunkType {
     pub chunk_type: [u8; 4],
 }

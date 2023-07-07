@@ -5,7 +5,7 @@ use std::{
     string::FromUtf8Error,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Chunk {
     length: u32,
     chunk_type: ChunkType,

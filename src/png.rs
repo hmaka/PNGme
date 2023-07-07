@@ -1,10 +1,9 @@
 use std::convert::TryFrom;
 use std::fmt;
-use std::fs;
+use std::fs::File;
 use std::io::ErrorKind;
 use std::io::{BufReader, Error, Read};
 use std::path::Path;
-use std::str::FromStr;
 
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
@@ -12,7 +11,7 @@ use crate::Result;
 
 /// A PNG container as described by the PNG spec
 /// http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Png {
     png_chunks: Vec<Chunk>,
 }
@@ -94,35 +93,58 @@ impl Png {
     /// Searches for a `Chunk` with the specified `chunk_type` and removes the first
     /// matching `Chunk` from this `Png` list of chunks.
     pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
-        todo!()
+        let mut remove_index = (false, 0 as usize);
+        for (i, chunk) in self.png_chunks.iter().enumerate() {
+            if chunk.chunk_type().to_string() == chunk_type {
+                remove_index = (true, i);
+                break;
+            }
+        }
+        if remove_index.0 {
+            let return_chunk = self.png_chunks[remove_index.1].clone();
+            self.png_chunks.remove(remove_index.1);
+            return Ok(return_chunk);
+        }
+        let error = Error::new(ErrorKind::Other, "No chunk to be removed found");
+        return Err(Box::new(error));
     }
 
     /// The header of this PNG.
     pub fn header(&self) -> &[u8; 8] {
-        todo!()
+        return &Png::STANDARD_HEADER;
     }
 
     /// Lists the `Chunk`s stored in this `Png`
     pub fn chunks(&self) -> &[Chunk] {
-        todo!()
+        return &self.png_chunks;
     }
 
     /// Searches for a `Chunk` with the specified `chunk_type` and returns the first
     /// matching `Chunk` from this `Png`.
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        todo!()
+        for chunk in &self.png_chunks {
+            if chunk.chunk_type().to_string() == chunk_type {
+                return Some(&chunk);
+            }
+        }
+        return None;
     }
 
     /// Returns this `Png` as a byte sequence.
     /// These bytes will contain the header followed by the bytes of all of the chunks.
     pub fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        let byte_vec: Vec<u8> = Png::STANDARD_HEADER
+            .iter()
+            .cloned()
+            .chain(self.png_chunks.iter().cloned().flat_map(|x| x.as_bytes()))
+            .collect();
+        return byte_vec;
     }
 }
 
 impl fmt::Display for Png {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+        write!(f, "{:?}", self.png_chunks)
     }
 }
 
@@ -132,7 +154,6 @@ mod tests {
     use crate::chunk::Chunk;
     use crate::chunk_type::ChunkType;
     use std::convert::TryFrom;
-    use std::str::FromStr;
 
     fn testing_chunks() -> Vec<Chunk> {
         let mut chunks = Vec::new();
@@ -268,6 +289,8 @@ mod tests {
         let png = Png::try_from(&PNG_FILE[..]).unwrap();
         let actual = png.as_bytes();
         let expected: Vec<u8> = PNG_FILE.to_vec();
+
+        println!("{},{}", actual.len(), expected.len());
         assert_eq!(actual, expected);
     }
 
