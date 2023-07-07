@@ -74,7 +74,16 @@ impl Png {
 
     /// Creates a `Png` from a file path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        todo!()
+        let file = File::open(path)?;
+        let mut reader = BufReader::new(file);
+
+        let mut buffer: Vec<u8> = Vec::new();
+
+        reader.read_to_end(&mut buffer)?;
+
+        let result = Png::try_from(buffer.as_ref());
+
+        return Ok(result?);
     }
 
     /// Appends a chunk to the end of this `Png` file's `Chunk` list.
